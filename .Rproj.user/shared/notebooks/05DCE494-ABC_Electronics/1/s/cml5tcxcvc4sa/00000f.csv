@@ -1,0 +1,31 @@
+"0","library(tidyverse)"
+"0","abc_electronics <- readr::read_csv(""ABC_Electronics.csv"")"
+"2","[1mRows: [22m[34m1000[39m [1mColumns: [22m[34m11[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (6): Product_Name, Category, Customer_ID, Customer_Name, Customer_Gender,...
+[32mdbl[39m  (4): Product_ID, Price, Quantity, Customer_Age
+[34mdate[39m (1): Order_Date"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","library(""sf"")"
+"2","Linking to GEOS 3.11.2, GDAL 3.6.2, PROJ 9.2.0; sf_use_s2() is TRUE
+"
+"0","library(""rnaturalearth"")"
+"2","The legacy packages maptools, rgdal, and rgeos, underpinning the sp package,
+which was just loaded, will retire in October 2023.
+Please refer to R-spatial evolution reports for details, especially
+https://r-spatial.org/r/2023/05/15/evolution4.html.
+It may be desirable to make the sf package available;
+package maintainers should consider adding sf to Suggests:.
+The sp package is now running under evolution status 2
+     (status 2 uses the sf package in place of rgdal)
+"
+"2","Support for Spatial objects (`sp`) will be deprecated in {rnaturalearth} and will be removed in a future release of the package. Please use `sf` objects with {rnaturalearth}. For example: `ne_download(returnclass = 'sf')`
+"
+"0","library(""countrycode"")"
+"0","library(""ggrepel"")"
+"0",""
+"0","world <- ne_countries(scale=""small"", returnclass=""sf"")"
+"0",""

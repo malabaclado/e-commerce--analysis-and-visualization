@@ -1,0 +1,279 @@
+---
+output:
+  word_document: default
+  pdf_document: default
+---
+
+# Analyzing E-commerce Sales Data: A Case Study Using Data Visualization in R 
+
+
+## Introduction
+ABC Electronics is an online e-commerce company that specializes in selling electronic gadgets worldwide. 
+As an analytics consultant, our objective is to analyze the company's sales data and provide actionable 
+insights.  In  this  case  study,  we  will  leverage  R,  a  popular  programming  language  for  data  analysis,  to  visualize  and  explore  the  dataset.  The  data  comprises  various  fields,  including  order  date,  product information, sales details, and customer demographics. Through this case study, we will demonstrate how 
+data visualization can play a vital role in understanding complex datasets and identifying opportunities for 
+growth. 
+
+```{r import, include=FALSE}
+library(tidyverse)
+abc_electronics <- readr::read_csv("ABC_Electronics.csv")
+
+library("sf")
+library("rnaturalearth")
+library("countrycode")
+library("ggrepel")
+
+world <- ne_countries(scale="small", returnclass="sf")
+
+```
+
+## Data Analysis and Interpretation
+
+### Sales Trend Over Time
+
+#### Overall Sales Trend
+
+```{r salestrend1, fig.align='center'}
+# Aggregate date, orders, quantity and total sales
+sales <-abc_electronics %>% 
+  arrange(Order_Date) %>%
+  group_by(Order_Date) %>%
+  summarize(
+    num_of_orders=n(),
+    num_of_quantity=sum(Quantity),
+    total_sales=sum(Quantity*Price)
+  )
+
+# Plot
+ggplot(sales, aes(x=Order_Date, y=total_sales)) +
+  geom_line(color="blue", linewidth=1) + 
+  labs(
+    title="Sales Trends Over Time",
+    x="Order Date",
+    y="Total Sales"
+  ) +
+  theme_classic() +
+  theme (plot.title=element_text(face = "bold"))
+```
+
+#### Sales Trend By Product
+
+```{r salestrend2, fig.align='center'}
+# Aggregate date, orders, quantity and total sales by product
+salesbyproduct <- abc_electronics %>%
+  arrange(Order_Date) %>%
+  group_by(Order_Date, Product_Name) %>%
+  summarize(
+    num_of_orders=n(),
+    num_of_quantity=sum(Quantity),
+    total_sales=sum(Quantity*Price), .groups = 'drop'
+  )
+
+# Plot
+ggplot(salesbyproduct, aes(x=Order_Date, y=total_sales)) +
+  geom_line(linewidth=1, aes(color=Product_Name)) +
+  facet_wrap(~Product_Name)+
+  theme_classic()+
+  theme (axis.text.x = element_text(angle=90),
+         plot.title=element_text(face = "bold")) + 
+  labs(
+    title="Sales Trends Over Time",
+    subtitle="Total Sales per Product",
+    x="Order Date",
+    y="Total Sales"
+  )
+```
+
+#### Sales Trend by Category
+
+```{r salestrend3, fig.align='center'}
+# Aggregate date, orders, quantity and total sales by category
+salesbycompany <- abc_electronics %>%
+  arrange(Order_Date) %>%
+  group_by(Order_Date, Category) %>%
+  summarize(
+    num_of_orders=n(),
+    num_of_quantity=sum(Quantity),
+    total_sales=sum(Quantity*Price), .groups='drop'
+  )
+
+# Plot
+ggplot(salesbycompany, aes(x=Order_Date, y=total_sales)) +
+  geom_line(linewidth=1, aes(color=Category)) +
+  facet_wrap(~Category)+
+  theme_classic()+
+  theme (axis.text.x = element_text(angle=90),
+         plot.title=element_text(face = "bold")) +
+  labs(
+    title="Sales Trends Over Time",
+    subtitle="Total Sales per Category",
+    x="Order Date",
+    y="Total Sales"
+  )
+```
+
+### Top-performing Products
+
+```{r topperforming}
+
+# Ploting bar graph
+ggplot(abc_electronics, aes(x=Product_Name, fill=Category)) + geom_bar() +
+  labs(
+    title="Top Performing Products",
+    subtitle="By Number of Orders and Category"
+  )+
+  labs(
+    title="Top-performing Products",
+    subtitle="Number of product orders per Category",
+    x="Product Name",
+    y="Number of Orders"
+  ) + theme_classic()+
+  theme(plot.title=element_text(face = "bold")) 
+```
+
+### Customer Age Distribution
+
+#### Overall Age Distribution
+
+```{r age1, fig.align='center'}
+
+# Plotting histogram
+ggplot(abc_electronics, aes(x=Customer_Age,fill=Customer_Gender)) + 
+  geom_histogram(
+    #fill="red",
+    color="black",
+    binwidth=10
+    ) + 
+  labs(
+    title="Customer Age Distribution"
+  ) + 
+  labs(
+    title="Customer Age Distribution",
+    x="Customer Age",
+    y="Count"
+  ) + theme_classic()+
+  theme(plot.title=element_text(face = "bold")) 
+```
+
+#### Customer Age Distribution by Country
+
+```{r age2, fig.align='center'}
+
+# Plotting histogram by country
+ggplot(abc_electronics, aes(x=Customer_Age,fill=Customer_Gender)) + 
+  geom_histogram(
+    #fill="red",
+    color="black",
+    binwidth=10
+  ) + 
+  facet_wrap(~Customer_Country) +
+  labs(
+    title="Customer Age Distribution",
+    subtitle="Per Gender and Country",
+    x="Customer Age",
+    y="Count"
+  ) + theme_classic() +
+  theme(plot.title=element_text(face = "bold")) 
+```
+
+### Customer Gender Distribution
+
+```{r gender}
+
+# Plotting pie chart
+gender_dist <- abc_electronics %>%
+  group_by(Customer_Gender) %>%
+  summarise(count=n(),
+            percentage=n()/nrow(abc_electronics))
+
+
+  
+ggplot(gender_dist, aes(x="", y=count, fill=Customer_Gender)) + 
+  geom_col(color="black")+
+  coord_polar("y", start=0)+
+  geom_text(aes(label = paste0(round(percentage*100), "%")), 
+          position = position_stack(vjust=0.5))+
+  theme(plot.title=element_text(face = "bold"),
+        panel.background = element_blank(),
+      axis.line = element_blank(),
+      axis.text = element_blank(),
+      axis.ticks = element_blank(),
+      axis.title = element_blank()
+      ) +
+  labs(
+    title="Customer Gender Distribution",
+    fill="Gender"
+    #subtitle="By Number of Orders and Category"
+  )
+```
+
+### Geographical Sales Distribution
+
+```{r geog}
+
+# Aggregating orders, quantity and sales by country
+salesbycountry <- abc_electronics %>% 
+  group_by(Customer_Country) %>%
+  summarize(
+    num_of_orders=n(),
+    num_of_quantity=sum(Quantity),
+    total_sales=sum(Quantity*Price)
+  )
+
+# Getting ISO name per country
+salesbycountry_with_iso <- salesbycountry %>% 
+  mutate(Iso3 = countrycode::countrycode(
+    sourcevar = Customer_Country,
+    origin="country.name",
+    destination="iso3c"
+  ))
+
+# Merging with world data for mapping
+data <- world%>% 
+  select(geometry, name, iso_a3) %>%
+  right_join(salesbycountry_with_iso, by=c("iso_a3"="Iso3"))
+
+# Plotting map data
+world%>%
+  filter(admin != "Antartica") %>%
+  st_transform(crs="+proj=robin") %>%
+  ggplot() + 
+  geom_sf(color="darkgrey")+
+  geom_sf(data=data, aes(fill=num_of_orders)) + 
+  #coord_sf(datum=NA) +
+  scale_fill_continuous()+
+  theme_classic()+
+  theme(
+    plot.title=element_text(face = "bold"),
+    axis.text.x=element_blank(),
+    #legend.position="none"
+    ) +
+  ggrepel::geom_label_repel(
+    data=data,
+    aes(label=Customer_Country, geometry=geometry),
+    stat="sf_coordinates",
+    min.segment.length=0
+  )+
+  labs(
+    title="Geographical Sales Distribution",
+    subtitle="Number of orders per country",
+    caption="",
+    x=NULL,
+    y=NULL,
+    fill="Orders"
+  )
+```
+
+
+## Insights
+1. There is an increasing lowest low for the month of August which implies improving sales.
+2. There is a significant increase in sales in smartphone in the month of August.
+3. HP is peaking in sales by end of August (might want to take more stocks of this for September.)
+4. The most sold product in the month of August is Smartwatch. The least sold product is smartphone.
+5. Customer demographics are in the age-range: 30 to 50.
+6. There are more female customers than male customers in all age ranges, regardless of country.
+7. Product sales decrease with increasing age in some countries like China and South Korea (Is this because of culture?)
+8. Most orders are from Canada. The country with the lowest order is Australia. 
+
+
+## Recommendations
